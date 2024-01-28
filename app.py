@@ -3,7 +3,6 @@ import pandas as pd
 import duckdb
 import io
 
-
 csv = '''
 beverage,price
 orange juice,2.5
@@ -23,6 +22,15 @@ answer = '''
 SELECT * FROM beverages 
 CROSS JOIN food_items'''
 solution = duckdb.sql(answer).df()
+
+st.write("Spaced Repetition System SQL practice")
+with st.sidebar: #les mots-clés with sont des contexts manager
+    option = st.selectbox("What would you like to review?",
+                          ['Joins', 'GroupBy', 'WindowsFunctions'],
+                          index=None,
+                          placeholder="Choose a theme...")
+
+    st.write(f'You selected: {option}')
 
 st.header('Enter your code :')
 query = st.text_area(label="Votre code sql ici", key='user_input')
