@@ -1,64 +1,57 @@
 # pylint disable=(missing-module-docstring)
 
-import io
-
-import duckdb
-import pandas as pd
 import streamlit as st
+import duckdb
+import ast
 
-CSV = """
-beverage,price
-orange juice,2.5
-expresso,2
-tea,3"""
-beverages = pd.read_csv(io.StringIO(CSV))
-CSV2 = """
-food item,food price
-cookie,2.5
-chocolatine,2
-muffin,3"""
-food_items = pd.read_csv(io.StringIO(CSV2))
+#ANSWER_STR = """
+#SELECT * FROM beverages
+#CROSS JOIN food_items"""
+#solution = duckdb.sql(ANSWER_STR).df()
 
-ANSWER_STR = """
-SELECT * FROM beverages 
-CROSS JOIN food_items"""
-solution = duckdb.sql(ANSWER_STR).df()
+con = duckdb.connect('data/exercises-sql-tables.duckdb', read_only=False)
 
 st.write("Spaced Repetition System SQL practice")
 with st.sidebar:  # les mots-clés with sont des contexts manager
-    option = st.selectbox(
+    theme = st.selectbox(
         "What would you like to review?",
-        ["Joins", "GroupBy", "WindowsFunctions"],
+        ["cross_joins", "GroupBy", "windows_functions"],
         index=None,
         placeholder="Choose a theme...",
     )
-    st.write(f"You selected: {option}")
+    st.write(f"You selected: {theme}")
+
+    exercise = con.execute(f"SELECT * FROM memory_state WHERE theme = '{theme}'").df()
+    st.write(exercise)
 
 st.header("Enter your code :")
 query = st.text_area(label="Votre code sql ici", key="user_input")
 
 if query:
-    result = duckdb.query(query).df()
+    result = con.execute(query).df()
     st.dataframe(result)
-
-    try:
-        result = result[[solution.columns]]
-        st.dataframe(result.compare(solution))
-    except KeyError as e:
-        print("Des colonnes sont manquantes")
-
-    n_lignes_diff = result.shape[0] - solution.shape[0]
-    if n_lignes_diff != 0:
-        st.write(f"Le nombre de lignes est incorrect : {n_lignes_diff}")
-
-
+#
+#     try:
+#         result = result[[solution.columns]]
+#         st.dataframe(result.compare(solution))
+#     except KeyError as e:
+#         print("Des colonnes sont manquantes")
+#
+#     n_lignes_diff = result.shape[0] - solution.shape[0]
+#     if n_lignes_diff != 0:
+#         st.write(f"Le nombre de lignes est incorrect : {n_lignes_diff}")
+#
+#
 tab2, tab3 = st.tabs(["Tables", "Solution"])
 with tab2:
-    st.write("Table : beverages")
-    st.dataframe(beverages)
-    st.write("Table : food_items")
-    st.dataframe(food_items)
-    st.write("Expected")
-    st.dataframe(solution)
+    exercise_tables = ast.literal_eval(exercise.loc[0, "tables"]) #permet de convertir la liste string en vraie liste Python
+    for table in exercise_tables:
+        st.write(f"Table : {table}")
+        df_table = con.execute(f"SELECT * from {table}").df()
+        st.dataframe(df_table)
+
 with tab3:
-    st.write(ANSWER_STR)
+    exercise_name = exercise.loc[0, "exercise_name"]
+    with open(f"answers/{exercise_name}.sql", "r") as f:
+        answer = f.read()
+    st.write(answer)
