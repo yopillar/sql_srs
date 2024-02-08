@@ -1,11 +1,20 @@
 # pylint disable=(missing-module-docstring)
 
 import io
-
+import os
 import duckdb
 import pandas as pd
+import logging
 import streamlit as st
-import ast
+
+
+if 'data' not in os.listdir():
+    logging.error(os.listdir())
+    logging.error('creating dir "data"')
+    os.mkdir('data')
+
+if "exercises-sql-tables.duckdb" not in os.listdir('data'):
+    exec(open('init_db.py').read()) # pylint disable=(missing-module-docstring)
 
 con = duckdb.connect("data/exercises-sql-tables.duckdb", read_only=False)
 
@@ -19,7 +28,12 @@ with st.sidebar:  # les mots-clés with sont des contexts manager
     )
     st.write(f"You selected: {theme}")
 
-    exercise = con.execute(f"SELECT * FROM memory_state WHERE theme = '{theme}'").df()
+    exercise = (con
+                .execute(f"SELECT * FROM memory_state WHERE theme = '{theme}'")
+                .df()
+                .sort_values(by='last_reviewed')
+                .reset_index(drop=True)
+                )
     st.write(exercise)
 
     exercise_name = exercise.loc[0, "exercise_name"]
@@ -48,9 +62,7 @@ if query:
 
 tab2, tab3 = st.tabs(["Tables", "Solution"])
 with tab2:
-    exercise_tables = ast.literal_eval(
-        exercise.loc[0, "tables"]
-    )  # permet de convertir la liste string en vraie liste Python
+    exercise_tables = exercise.loc[0, "tables"]  # permet de convertir la liste string en vraie liste Python
 
     for table in exercise_tables:
         st.write(f"Table : {table}")
