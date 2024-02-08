@@ -1,7 +1,7 @@
 import io
 
-import pandas as pd
 import duckdb
+import pandas as pd
 
 con = duckdb.connect("data/exercises-sql-tables.duckdb", read_only=False)
 
@@ -32,24 +32,24 @@ muffin,3"""
 food_items = pd.read_csv(io.StringIO(CSV2))
 con.execute("CREATE TABLE IF NOT EXISTS food_items as SELECT * from food_items")
 
-sizes = """
+SIZES = """
 size
 XS
 M
 L
 XL
 """
-sizes = pd.read_csv(io.StringIO(sizes))
+sizes = pd.read_csv(io.StringIO(SIZES))
 con.execute("CREATE TABLE IF NOT EXISTS sizes as SELECT * from sizes")
 
-trademarks = """
+TRADEMARKS = """
 trademark
 Nike
 Asphalte
 Abercrombie
 Lewis
 """
-trademarks = pd.read_csv(io.StringIO(trademarks))
+trademarks = pd.read_csv(io.StringIO(TRADEMARKS))
 con.execute("CREATE TABLE IF NOT EXISTS trademarks as SELECT * from trademarks")
 
 con.close()
