@@ -5,6 +5,7 @@ import os
 
 import duckdb
 import streamlit as st
+from datetime import date, timedelta
 
 
 def compare_solutions(user_query: str) -> None:
@@ -17,10 +18,15 @@ def compare_solutions(user_query: str) -> None:
     result = con.execute(user_query).df()
     st.dataframe(result)
     try:
-        result = result[[solution_df.columns]]
-        st.dataframe(result.compare(solution_df))
+        result = result[solution_df.columns]
+        if result.compare(solution_df).shape == (0, 0):
+            st.write('Correct !')
+            st.balloons()
+        else:
+            st.dataframe(result.compare(solution_df))
+            st.write('Erreur')
     except KeyError as e:
-        print("Des colonnes sont manquantes")
+        st.write("Des colonnes sont manquantes")
     n_lignes_diff = result.shape[0] - solution_df.shape[0]
     if n_lignes_diff != 0:
         st.write(f"Le nombre de lignes est incorrect : {n_lignes_diff}")
@@ -71,6 +77,16 @@ query = st.text_area(label="Votre code sql ici", key="user_input")
 
 if query:
     compare_solutions(query)
+
+for n_days in [2, 7, 21]:
+    if st.button(f'revoir dans {n_days} jours'):
+        next_review = date.today() + timedelta(days=n_days)
+        con.execute(f"UPDATE memory_state SET last_reviewed = '{next_review}' WHERE exercise_name='{exercise_name}'")
+        st.rerun()
+
+if st.button('Reset'):
+    con.execute(f"UPDATE memory_state SET last_reviewed = '1970-01-01'")
+    st.rerun()
 
 tab2, tab3 = st.tabs(["Tables", "Solution"])
 with tab2:
